@@ -11,6 +11,7 @@ class TodoBase(SQLModel):
     start_time: Optional[datetime] = Field(None, nullable=True)  # 예정 시작 시간
     end_time: Optional[datetime] = Field(None, nullable=True)  # 예정 종료 시간
     location: Optional[str] = Field(None, nullable=True)
+    emotion: Optional[str] = Field(None, nullable=True)
 
 
 class Todo(TodoBase, table=True):
