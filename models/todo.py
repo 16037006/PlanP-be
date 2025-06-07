@@ -4,11 +4,14 @@ from typing import Optional
 from sqlmodel import SQLModel, Field
 
 
-class Todo(SQLModel, table=True):
-    id: int | None = Field(None, primary_key=True)
-    plan_date: date  # 예정 날짜
-    start_time: datetime | None  # 예정 시작 시간
-    end_time: datetime | None  # 예정 종료 시간
+class TodoBase(SQLModel):
     title: str
-    description: Optional[str]
-    location: Optional[str]
+    description: Optional[str] = Field(None, nullable=True)
+    plan_date: date  # 예정 날짜
+    start_time: Optional[datetime] = Field(None, nullable=True)  # 예정 시작 시간
+    end_time: Optional[datetime] = Field(None, nullable=True)  # 예정 종료 시간
+    location: Optional[str] = Field(None, nullable=True)
+
+
+class Todo(TodoBase, table=True):
+    id: int | None = Field(None, primary_key=True)
