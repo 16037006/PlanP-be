@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Path
@@ -5,7 +6,7 @@ from sqlmodel import Session
 
 from database import get_session
 from models.todo import Todo, TodoBase
-from services.todo import create_todo, get_todo
+from services.todo import create_todo, get_todo, get_todos_by_plan_date
 
 router = APIRouter()
 
@@ -28,3 +29,12 @@ async def create(
     todo = create_todo(session, todo)
 
     return todo
+
+
+@router.get("/get-by-plan-date/")
+async def get_by_plan_date(
+        session: Annotated[Session, Depends(get_session)],
+        plan_date: date
+):
+    todos = get_todos_by_plan_date(session, plan_date)
+    return todos
