@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 from typing import List
 
 from sqlmodel import Session, select
@@ -47,18 +47,40 @@ def get_todos_by_plan_date(db: Session, plan_date: date) -> List[Todo]:
 
 
 def get_todos_by_title(db: Session, title: str) -> List[Todo]:
-    # TODO: 제목으로 찾기 구현
-    pass
+    todos = db.exec(
+        select(Todo).where(Todo.title == title).order_by(Todo.start_time))
+    if not todos:
+        raise TodoNotFoundException(status_code=404, detail=f"{title=}에 해당하는 계획이 없습니다. ")
+
+    return todos
 
 
-def get_todos_weekly(db: Session, title: str) -> List[Todo]:
-    # TODO: 주간 일정 불러오기 구현
-    # TODO: 불러온 일정 갯수 카운트 구현
-    pass
+def get_todos_between_date(db: Session, start_date: date, end_date: date) -> List[Todo]:
+    todos = db.exec(
+        select(Todo)
+        .where(Todo.plan_date >= start_date, Todo.plan_date <= end_date)
+        .order_by(Todo.start_time)
+    ).all()
+    return todos
+
+
+def get_todos_this_weekly(db: Session, today_date: date) -> List[Todo]:
+    weekday = today_date.isoweekday() % 7
+    # 일요일 기준 이번주의 시작일을 선언
+    start_of_week = today_date - timedelta(days=weekday)
+    # 이번 주의 마지막 토요일을 선언
+    end_of_week = start_of_week + timedelta(days=6)
+
+    return get_todos_between_date(db, start_of_week, end_of_week)
 
 
 def remove_todo(db: Session, todo_id: int) -> bool:
-    # TODO: 일정삭제 구현
+    todo = db.get(Todo, todo_id)
+    if not todo:
+        raise TodoNotFoundException(status_code=404, detail=f"{todo_id=} 해당하는 계획이 없습니다. ")
+
+    db.delete(todo)
+    db.commit()
     return True
 
 
@@ -77,3 +99,20 @@ def modify_todo(db: Session, todo_id: int, todo_base: TodoBase) -> Todo:
     db.refresh(todo)
 
     return todo
+
+
+def get_todos_by_description(db: Session, description: str) -> List[Todo]:
+    # description에 작성한 내용 중 일치하는 단어가 있으면 조회 (LIKE '%단어%')
+    todos = db.exec(
+        select(Todo)
+        .where(Todo.description.like(f"%{description}%"))
+        .order_by(Todo.start_time)
+    ).all()
+
+    if not todos:
+        raise TodoNotFoundException(
+            status_code=404,
+            detail=f"{description=}이 포함된 계획이 없습니다."
+        )
+
+    return todos
